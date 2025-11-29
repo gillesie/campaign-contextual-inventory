@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useData } from '../context/DataContext';
 import { 
   Box, Grid, Paper, Typography, TextField, MenuItem, 
-  Select, FormControl, InputLabel, Chip, Stack, ToggleButton, ToggleButtonGroup, 
+  Select, FormControl, InputLabel, Stack, ToggleButton, ToggleButtonGroup, 
   Autocomplete
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
@@ -18,14 +18,14 @@ export default function Explorer() {
   // --- Global Filters ---
   const [search, setSearch] = useState('');
   const [countryFilter, setCountryFilter] = useState('ALL');
-  const [brandFilter, setBrandFilter] = useState([]); // New Brand Filter
+  const [brandFilter, setBrandFilter] = useState([]); 
   
-  // --- Complex Context Filters ---
+  // --- Context Mode & Filters ---
+  const [contextMode, setContextMode] = useState('IAB'); // 'IAB' or 'CLUSTER'
   const [selectedIabIds, setSelectedIabIds] = useState([]);
   const [selectedClusterIds, setSelectedClusterIds] = useState([]);
-  const [filterLogic, setFilterLogic] = useState('OR'); // 'AND' or 'OR' between context filters
 
-  // Derive available brands based on country for the dropdown
+  // Derive available brands based on country
   const availableBrands = useMemo(() => {
     const brands = new Set();
     articles.forEach(a => {
@@ -47,67 +47,67 @@ export default function Explorer() {
       // 2. Country Filter
       const matchesCountry = countryFilter === 'ALL' || art.country === countryFilter;
 
-      // 3. Brand Filter (Multi-select)
+      // 3. Brand Filter
       const matchesBrand = brandFilter.length === 0 || 
                            art.brands.some(b => brandFilter.includes(b));
 
-      // 4. Contextual Filters (IAB & Clusters)
+      // 4. Contextual Filters (Strict Mode: IAB OR Cluster)
       let matchesContext = true;
-      const hasIabSelection = selectedIabIds.length > 0;
-      const hasClusterSelection = selectedClusterIds.length > 0;
 
-      if (hasIabSelection || hasClusterSelection) {
-        const iabMatch = hasIabSelection && art.iab_tags.some(tag => selectedIabIds.includes(tag.id));
-        const clusterMatch = hasClusterSelection && art.topic_clusters.some(c => selectedClusterIds.includes(c.id));
-
-        if (filterLogic === 'OR') {
-          // Union: Match IAB OR Match Cluster (if selected)
-          // If only one type is selected, it effectively acts as a filter for that type
-          const matchesIabIfActive = !hasIabSelection || iabMatch;
-          const matchesClusterIfActive = !hasClusterSelection || clusterMatch;
-          
-          // If both active: IAB || Cluster
-          // If only IAB active: IAB (Cluster is true via !hasClusterSelection logic? No, logic needs care)
-          
-          if (hasIabSelection && hasClusterSelection) {
-             matchesContext = iabMatch || clusterMatch;
-          } else {
-             matchesContext = (hasIabSelection && iabMatch) || (hasClusterSelection && clusterMatch);
-          }
-
-        } else {
-          // INTERSECTION: Match IAB (if active) AND Match Cluster (if active)
-          matchesContext = (!hasIabSelection || iabMatch) && (!hasClusterSelection || clusterMatch);
+      if (contextMode === 'IAB') {
+        if (selectedIabIds.length > 0) {
+            matchesContext = art.iab_tags.some(tag => selectedIabIds.includes(tag.id));
+        }
+      } else {
+        // Cluster Mode
+        if (selectedClusterIds.length > 0) {
+            matchesContext = art.topic_clusters.some(c => selectedClusterIds.includes(c.id));
         }
       }
 
       return matchesSearch && matchesCountry && matchesBrand && matchesContext;
     });
-  }, [articles, search, countryFilter, brandFilter, selectedIabIds, selectedClusterIds, filterLogic]);
+  }, [articles, search, countryFilter, brandFilter, selectedIabIds, selectedClusterIds, contextMode]);
 
   // --- Stats Calculation ---
   const totalImpressions = filteredArticles.reduce((acc, curr) => acc + curr.total_impressions, 0);
   
-  const iabDistribution = useMemo(() => {
+  const distribution = useMemo(() => {
     const dist = {};
     filteredArticles.forEach(a => {
-        // Count primary IAB tag
-        if(a.iab_tags[0]) {
-            dist[a.iab_tags[0].label] = (dist[a.iab_tags[0].label] || 0) + a.total_impressions;
+        // Determine items based on mode
+        const items = contextMode === 'IAB' ? a.iab_tags : a.topic_clusters;
+        
+        // Count primary item (first in list) for distribution
+        if(items && items[0]) {
+            dist[items[0].label] = (dist[items[0].label] || 0) + a.total_impressions;
         }
     });
     return Object.keys(dist)
         .map(k => ({ name: k, value: dist[k] }))
         .sort((a,b) => b.value - a.value)
         .slice(0, 5);
-  }, [filteredArticles]);
+  }, [filteredArticles, contextMode]);
 
+  // --- Dynamic Columns ---
   const columns = [
     { field: 'title', headerName: 'Title', width: 250 },
     { field: 'country', headerName: 'Ctry', width: 70 },
     { field: 'brandList', headerName: 'Brands', width: 180, valueGetter: (params) => params.row.brands.join(', ') },
-    { field: 'iabList', headerName: 'IAB Tags', width: 200, valueGetter: (params) => params.row.iab_tags.map(t=>t.label).join(', ') },
-    { field: 'clusterList', headerName: 'Clusters', width: 200, valueGetter: (params) => params.row.topic_clusters.map(c=>c.label).join(', ') },
+    // Show IAB column only in IAB mode
+    ...(contextMode === 'IAB' ? [{ 
+        field: 'iabList', 
+        headerName: 'IAB Tags', 
+        width: 250, 
+        valueGetter: (params) => params.row.iab_tags.map(t=>t.label).join(', ') 
+    }] : []),
+    // Show Cluster column only in Cluster mode
+    ...(contextMode === 'CLUSTER' ? [{ 
+        field: 'clusterList', 
+        headerName: 'Topic Clusters', 
+        width: 250, 
+        valueGetter: (params) => params.row.topic_clusters.map(c=>c.label).join(', ') 
+    }] : []),
     { field: 'total_impressions', headerName: 'Impressions', width: 130, type: 'number' },
   ];
 
@@ -152,16 +152,16 @@ export default function Explorer() {
             </Grid>
             <Grid item xs={12} md={2}>
                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="caption">Logic:</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 'bold' }}>Mode:</Typography>
                     <ToggleButtonGroup
-                        value={filterLogic}
+                        value={contextMode}
                         exclusive
-                        onChange={(e, newLogic) => newLogic && setFilterLogic(newLogic)}
+                        onChange={(e, newMode) => newMode && setContextMode(newMode)}
                         size="small"
                         color="primary"
                     >
-                        <ToggleButton value="OR">OR</ToggleButton>
-                        <ToggleButton value="AND">AND</ToggleButton>
+                        <ToggleButton value="IAB">IAB</ToggleButton>
+                        <ToggleButton value="CLUSTER">Cluster</ToggleButton>
                     </ToggleButtonGroup>
                  </Box>
             </Grid>
@@ -174,16 +174,19 @@ export default function Explorer() {
         {/* Left Sidebar: Context Filters */}
         <Grid item xs={12} md={3} sx={{ height: '100%', overflowY: 'auto' }}>
             <Stack spacing={2}>
-                <TaxonomyFilter 
-                    taxonomy={taxonomy} 
-                    selectedIds={selectedIabIds} 
-                    onSelectionChange={setSelectedIabIds} 
-                />
-                <ClusterFilter 
-                    clusters={clusters} 
-                    selectedIds={selectedClusterIds} 
-                    onSelectionChange={setSelectedClusterIds} 
-                />
+                {contextMode === 'IAB' ? (
+                    <TaxonomyFilter 
+                        taxonomy={taxonomy} 
+                        selectedIds={selectedIabIds} 
+                        onSelectionChange={setSelectedIabIds} 
+                    />
+                ) : (
+                    <ClusterFilter 
+                        clusters={clusters} 
+                        selectedIds={selectedClusterIds} 
+                        onSelectionChange={setSelectedClusterIds} 
+                    />
+                )}
             </Stack>
         </Grid>
 
@@ -200,25 +203,30 @@ export default function Explorer() {
                     </Paper>
                 </Grid>
                 <Grid item xs={12} md={8}>
-                     <Paper sx={{ p: 2, height: '100%' }}>
-                        <Typography variant="subtitle2">Top IAB Categories (by Impressions)</Typography>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie 
-                                    data={iabDistribution} 
-                                    dataKey="value" 
-                                    cx="50%" cy="50%" 
-                                    outerRadius={60} 
-                                    label 
-                                >
-                                    {iabDistribution.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                                <Legend layout="vertical" verticalAlign="middle" align="right" />
-                            </PieChart>
-                        </ResponsiveContainer>
+                     <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        <Typography variant="subtitle2">
+                            {contextMode === 'IAB' ? 'Top IAB Categories' : 'Top Topic Clusters'} (by Impressions)
+                        </Typography>
+                        {/* Wrapper Box to fix Recharts resize loop bug */}
+                        <Box sx={{ flexGrow: 1, minHeight: 0, mt: 1 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie 
+                                        data={distribution} 
+                                        dataKey="value" 
+                                        cx="50%" cy="50%" 
+                                        outerRadius={60} 
+                                        label 
+                                    >
+                                        {distribution.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                    <Legend layout="vertical" verticalAlign="middle" align="right" />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </Box>
                      </Paper>
                 </Grid>
             </Grid>
