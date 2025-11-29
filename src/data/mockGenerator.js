@@ -1,5 +1,10 @@
+{
+type: "file",
+fileName: "gillesie/campaign-contextual-inventory/campaign-contextual-inventory-af3bfaf163e0aba7124c83f02bd858f2445d3f72/src/data/mockGenerator.js",
+content: `
 import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
+import { IAB_TAXONOMY_V3 } from './iabTaxonomy';
 
 // --- Constants ---
 const BRANDS_BE = ['HLN', 'De Morgen', 'Humo', 'Dag Allemaal', 'VT Wonen', 'Mijn Energie', 'VTM', 'Tweakers BE'];
@@ -9,36 +14,39 @@ const GARM_CATEGORIES = [
   'Death, Injury & Military Conflict', 'Online Piracy', 'Hate Speech & Acts of Aggression',
   'Obscenity and Profanity', 'Illegal Drugs', 'Sensitive Social Issues', 'Terrorism'
 ];
-// Simplified IAB v3 Mock (Hierarchical)
-export const IAB_TAXONOMY = [
-  { id: 'IAB1', name: 'Automotive', children: ['IAB1-1', 'IAB1-2'] },
-  { id: 'IAB2', name: 'Books & Literature', children: ['IAB2-1'] },
-  { id: 'IAB3', name: 'Business & Finance', children: ['IAB3-1', 'IAB3-8'] },
-  { id: 'IAB19', name: 'Technology & Computing', children: ['IAB19-6', 'IAB19-12'] },
-  { id: 'IAB17', name: 'Sports', children: ['IAB17-15', 'IAB17-2'] },
-];
+
+export { IAB_TAXONOMY_V3 };
+
+// Flatten taxonomy for easy random picking
+const flattenTaxonomy = (nodes, result = []) => {
+  nodes.forEach(node => {
+    result.push({ id: node.id, label: node.label });
+    if (node.children) flattenTaxonomy(node.children, result);
+  });
+  return result;
+};
+const FLAT_IAB = flattenTaxonomy(IAB_TAXONOMY_V3);
 
 // --- Generators ---
 
 // Generate 500 Fictive Clusters
 export const generateClusters = () => {
   const clusters = [];
-  const adjectives = ['Modern', 'Digital', 'Sustainable', 'Urban', 'Family', 'Budget', 'Luxury', 'Tech', 'Green', 'Healthy'];
-  const nouns = ['Living', 'Mobility', 'Finance', 'Parenting', 'Gadgets', 'Travel', 'Dining', 'Wellness', 'Renovation', 'Politics'];
+  const adjectives = ['Modern', 'Digital', 'Sustainable', 'Urban', 'Family', 'Budget', 'Luxury', 'Tech', 'Green', 'Healthy', 'Global', 'Local', 'Smart', 'Creative'];
+  const nouns = ['Living', 'Mobility', 'Finance', 'Parenting', 'Gadgets', 'Travel', 'Dining', 'Wellness', 'Renovation', 'Politics', 'Education', 'Entertainment'];
   
   for (let i = 0; i < 500; i++) {
-    const label = `${adjectives[i % adjectives.length]} ${nouns[i % nouns.length]} ${Math.floor(i/10)}`;
+    const label = \`\${adjectives[i % adjectives.length]} \${nouns[i % nouns.length]} \${Math.floor(i/10)}\`;
     clusters.push({
-      id: `cluster_${i}`,
+      id: \`cluster_\${i}\`,
       label: label,
-      // Random 3D coordinates for visualization later
       vector: [Math.random() * 20 - 10, Math.random() * 20 - 10, Math.random() * 20 - 10]
     });
   }
   return clusters;
 };
 
-// Generate Impressions History (last 30 days for simplicity in mock)
+// Generate Impressions History
 const generateImpressions = () => {
   const history = {};
   let total = 0;
@@ -59,40 +67,37 @@ export const generateArticles = (clusters) => {
     const country = isBE ? 'BE' : 'NL';
     const availableBrands = isBE ? BRANDS_BE : BRANDS_NL;
     
-    // Pick 1 to 3 brands
+    // Pick Brands
     const numBrands = Math.floor(Math.random() * 3) + 1;
     const articleBrands = availableBrands.sort(() => 0.5 - Math.random()).slice(0, numBrands);
 
     // Pick Topic Clusters
-    const numClusters = Math.floor(Math.random() * 5) + 1;
+    const numClusters = Math.floor(Math.random() * 3) + 1;
     const selectedClusters = clusters.sort(() => 0.5 - Math.random()).slice(0, numClusters)
       .map(c => ({ id: c.id, label: c.label, score: (Math.random() * 0.5 + 0.5).toFixed(2) }));
 
-    // Pick Brand Safety
+    // Pick IAB Tags (from new taxonomy)
+    const numTags = Math.floor(Math.random() * 3) + 1;
+    const selectedTags = FLAT_IAB.sort(() => 0.5 - Math.random()).slice(0, numTags)
+      .map(t => ({ id: t.id, label: t.label, score: (Math.random() * 0.5 + 0.5).toFixed(2) }));
+
     const safetyLabel = GARM_CATEGORIES[Math.floor(Math.random() * GARM_CATEGORIES.length)];
-    
-    // Impressions
     const { history, total } = generateImpressions();
 
     articles.push({
       id: uuidv4(),
-      title: `Article about ${selectedClusters[0].label}`,
-      author: `Editor ${Math.floor(Math.random() * 100)}`,
-      body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
+      title: \`\${selectedTags[0]?.label || 'General'} News: \${selectedClusters[0]?.label}\`,
+      author: \`Editor \${Math.floor(Math.random() * 100)}\`,
       country,
       brands: articleBrands,
       topic_clusters: selectedClusters,
-      iab_tags: [{ id: 'IAB19', score: 0.9 }, { id: 'IAB3', score: 0.7 }], // Simplified for mock
+      iab_tags: selectedTags,
       brand_safety: [{ label: safetyLabel, risk: Math.random() > 0.8 ? 'High' : 'Low' }],
-      impressions_history: history,
       total_impressions: total,
-      // Fake embedding for 3D view (positioned near its primary cluster)
-      vector: [
-        clusters.find(c => c.id === selectedClusters[0].id).vector[0] + (Math.random() - 0.5),
-        clusters.find(c => c.id === selectedClusters[0].id).vector[1] + (Math.random() - 0.5),
-        clusters.find(c => c.id === selectedClusters[0].id).vector[2] + (Math.random() - 0.5),
-      ]
+      vector: [0,0,0] // Simplified
     });
   }
   return articles;
 };
+`
+}
