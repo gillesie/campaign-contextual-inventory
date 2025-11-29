@@ -1,7 +1,3 @@
-{
-type: "file",
-fileName: "gillesie/campaign-contextual-inventory/campaign-contextual-inventory-af3bfaf163e0aba7124c83f02bd858f2445d3f72/src/components/TaxonomyFilter.jsx",
-content: `
 import React, { useState } from 'react';
 import { 
   Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, 
@@ -116,6 +112,4 @@ export default function TaxonomyFilter({ taxonomy, selectedIds, onSelectionChang
       </List>
     </Box>
   );
-}
-`
 }

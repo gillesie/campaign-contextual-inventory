@@ -1,7 +1,3 @@
-{
-type: "file",
-fileName: "gillesie/campaign-contextual-inventory/campaign-contextual-inventory-af3bfaf163e0aba7124c83f02bd858f2445d3f72/src/components/Explorer.jsx",
-content: `
 import React, { useState, useMemo } from 'react';
 import { useData } from '../context/DataContext';
 import { 
@@ -216,7 +212,7 @@ export default function Explorer() {
                                     label 
                                 >
                                     {iabDistribution.map((entry, index) => (
-                                        <Cell key={\`cell-\${index}\`} fill={COLORS[index % COLORS.length]} />
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
                                 <Tooltip />
@@ -241,6 +237,4 @@ export default function Explorer() {
       </Grid>
     </Box>
   );
-}
-`
 }

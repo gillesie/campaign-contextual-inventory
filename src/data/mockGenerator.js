@@ -1,7 +1,3 @@
-{
-type: "file",
-fileName: "gillesie/campaign-contextual-inventory/campaign-contextual-inventory-af3bfaf163e0aba7124c83f02bd858f2445d3f72/src/data/mockGenerator.js",
-content: `
 import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
 import { IAB_TAXONOMY_V3 } from './iabTaxonomy';
@@ -36,9 +32,9 @@ export const generateClusters = () => {
   const nouns = ['Living', 'Mobility', 'Finance', 'Parenting', 'Gadgets', 'Travel', 'Dining', 'Wellness', 'Renovation', 'Politics', 'Education', 'Entertainment'];
   
   for (let i = 0; i < 500; i++) {
-    const label = \`\${adjectives[i % adjectives.length]} \${nouns[i % nouns.length]} \${Math.floor(i/10)}\`;
+    const label = `${adjectives[i % adjectives.length]} ${nouns[i % nouns.length]} ${Math.floor(i/10)}`;
     clusters.push({
-      id: \`cluster_\${i}\`,
+      id: `cluster_${i}`,
       label: label,
       vector: [Math.random() * 20 - 10, Math.random() * 20 - 10, Math.random() * 20 - 10]
     });
@@ -86,8 +82,8 @@ export const generateArticles = (clusters) => {
 
     articles.push({
       id: uuidv4(),
-      title: \`\${selectedTags[0]?.label || 'General'} News: \${selectedClusters[0]?.label}\`,
-      author: \`Editor \${Math.floor(Math.random() * 100)}\`,
+      title: `${selectedTags[0]?.label || 'General'} News: ${selectedClusters[0]?.label}`,
+      author: `Editor ${Math.floor(Math.random() * 100)}`,
       country,
       brands: articleBrands,
       topic_clusters: selectedClusters,
@@ -99,5 +95,3 @@ export const generateArticles = (clusters) => {
   }
   return articles;
 };
-`
-}

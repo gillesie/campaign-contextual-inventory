@@ -1,7 +1,3 @@
-{
-type: "file",
-fileName: "gillesie/campaign-contextual-inventory/campaign-contextual-inventory-af3bfaf163e0aba7124c83f02bd858f2445d3f72/src/data/iabTaxonomy.js",
-content: `
 export const IAB_TAXONOMY_V3 = [
   {
     id: 'IAB1', label: 'Arts & Entertainment', children: [
@@ -66,7 +62,7 @@ export const IAB_TAXONOMY_V3 = [
       { id: 'IAB7-5', label: 'Alternative Medicine' },
       { id: 'IAB7-32', label: 'Nutrition' },
       { id: 'IAB7-44', label: 'Weight Loss' },
-      { id: 'IAB7-45', label: 'Women\\'s Health' }
+      { id: 'IAB7-45', label: 'Women\'s Health' }
     ]
   },
   {
@@ -96,7 +92,7 @@ export const IAB_TAXONOMY_V3 = [
     ]
   },
   {
-    id: 'IAB11', label: 'Law, Gov\\'t & Politics', children: [
+    id: 'IAB11', label: 'Law, Gov\'t & Politics', children: [
       { id: 'IAB11-2', label: 'Legal Issues' },
       { id: 'IAB11-4', label: 'Politics' }
     ]
@@ -181,5 +177,3 @@ export const IAB_TAXONOMY_V3 = [
     ]
   }
 ];
-`
-}

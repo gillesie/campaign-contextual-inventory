@@ -1,7 +1,3 @@
-{
-type: "file",
-fileName: "gillesie/campaign-contextual-inventory/campaign-contextual-inventory-af3bfaf163e0aba7124c83f02bd858f2445d3f72/src/components/ClusterFilter.jsx",
-content: `
 import React, { useState, useMemo } from 'react';
 import { 
   Box, Typography, TextField, Chip, Autocomplete, Checkbox 
@@ -55,11 +51,9 @@ export default function ClusterFilter({ clusters, selectedIds, onSelectionChange
           }
         />
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            {selectedIds.length > 0 ? \`\${selectedIds.length} clusters selected\` : 'No clusters selected'}
+            {selectedIds.length > 0 ? `${selectedIds.length} clusters selected` : 'No clusters selected'}
         </Typography>
       </Box>
     </Box>
   );
-}
-`
 }
